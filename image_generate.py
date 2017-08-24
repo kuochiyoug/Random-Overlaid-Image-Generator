@@ -1,34 +1,52 @@
+import sys
 import cv2
 import numpy as np
 import glob
 from lib.image_generator import *
 from lib.xmlgenerator import *
-from IPython.core.debugger import Tracer; keyboard = Tracer()
+from IPython.terminal.debugger import set_trace as keyboard
+
+
 
 print("loading image generator...")
 input_width = 480
 input_height = 480
+
+#The object images(background removed) folders
 item_path = "./items/"
-#background_path = "./backgrounds/"
-background_path = "./background_bin/"
-Generate_folder = "./"
-seriesname = "Bin_Generated_Data_"
-generator = ImageGenerator(item_path, background_path)
 
-#sets = 5
-sets = 100
-n_samples = 100
-n_items=10
+#The background image folder
+background_path = "./background/"
 
-delta_hue=0.03
-delta_sat_scale=0.2
-delta_val_scale=0.2
-min_item_scale=1.0
-max_item_scale=1.2
-rand_angle=90
-minimum_crop=0.85
+#This is the keyword that you want generator to distinguish the classes from filename. For example, you will have {cat, dog} classes from read files like {cat-1.png,dog-1.png, cat-2.png}. If you don't want to seperate you keep split_class_keywords="" will be fine
+split_class_keywords="-"
+
+#Output of your generated image and annotation
+Generate_folder = "./data/"
+
+#The sample name patterns
+seriesname = "Generated_data_"
 
 
+sets = 5 #Generate set of batch
+n_samples = 100 #Generate samples per batch
+n_items=15 #Max objects be placed in one image
+
+#Item Generation Options
+delta_hue=0.05 #"Hue" changes in HSV space
+delta_sat_scale=0.4 #"Saturation" changes in HSV space
+delta_val_scale=0.2 #"Value" changes in HSV space
+min_item_scale=0.9 #Min item scaling
+max_item_scale=1.2 #Max item scaling
+rand_angle=90 #Max rotation angle of object
+minimum_crop=0.85 #The minimum crop scale to the background image
+range_of_overlay=[[0,480],[80,415]] #The range limitation [[xmin,xmax],[ymin,ymax]], None for no restriction
+generate_once=True #This controls if you only want one class be generated once in each image
+max_BeOverlaid=0.4 #This value controls not to generate if items be overlaid by other item. The overlaid area rate should never over this scale or it will tring to replace the item to another place that match this value
+
+
+
+generator = ImageGenerator(item_path, background_path,split_class=split_class_keywords)
 def restrict_value_in_image(anno,width,height):
     xmin = max(anno[0],0)
     xmax = min(anno[1],width)
@@ -67,14 +85,16 @@ for set in range(sets):
         minimum_crop=minimum_crop,
         delta_hue=delta_hue,
         delta_sat_scale=delta_sat_scale,
-        delta_val_scale=delta_val_scale
+        delta_val_scale=delta_val_scale,
+        range_of_overlay=range_of_overlay,
+        max_BeOverlaid=max_BeOverlaid,
+        generate_once=generate_once
     )
     for i, image in enumerate(x):
         image = np.transpose(image, (1, 2, 0)).copy()
-
         dataname=seriesname+"{}".format(number)
         imagename = dataname + ".png"
-        XMLfolder = Generate_folder + "Annotation/"
+        XMLfolder = Generate_folder + "annotation/"
         XMLpath = XMLfolder+dataname+".xml"
         if not os.path.isdir(XMLfolder):
             os.makedirs(XMLfolder)
@@ -82,7 +102,7 @@ for set in range(sets):
         width, height, _ = image.shape
         for truth_box in t[i]:
             box_x, box_y, box_w, box_h = truth_box['x']*width, truth_box['y']*height, truth_box['w']*width, truth_box['h']*height
-            classname = get_classname(generator.labels[truth_box['label']])
+            classname = truth_box['classname']
             box = [classname,box_x,box_y,box_w,box_h]
             anno = get_annotation_value(box)
             anno = restrict_value_in_image(anno,input_width,input_height)
@@ -92,7 +112,7 @@ for set in range(sets):
         FinishXML(XMLpath)
         #print(t[i])
         image=(image*255).astype('uint8')
-        Imagefolder = Generate_folder+"Images/"
+        Imagefolder = Generate_folder+"images/"
         Imagepath = Imagefolder + dataname+".png"
         if not os.path.isdir(Imagefolder):
             os.makedirs(Imagefolder)
@@ -100,4 +120,3 @@ for set in range(sets):
         number = number+1
     print ("Set "+ str(set+1) + " Done.")
 print ("Generate Finished.")
-

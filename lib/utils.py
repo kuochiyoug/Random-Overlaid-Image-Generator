@@ -70,6 +70,12 @@ def box_union(a, b):
     u = a.w * a.h + b.w * b.h - i
     return u
 
+# Return Box Area
+def box_area(box):
+    area = box.w * box.h
+    return area
+
+
 
 # compute iou
 def box_iou(a, b):
