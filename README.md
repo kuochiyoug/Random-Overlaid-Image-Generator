@@ -26,3 +26,12 @@ This tool contains three main tools:
  `Execution:` **python3 image_marker.py /path/to/annotation/folder /path/to/image/folder /path/to/output/folder float(PERCENTAGE_OF_MARKING)**
 
  Mark out the bounding box through annotation file. It copy the images with bounding box marked. PERCENTAGE_OF_MARKING is controlling how big you need to mark. **1.0** will be the same size of annotation.
+
+
+* AutoTrimTransparent.py
+
+`Input:` **[Images]**  
+`Output:`  **[Images]**  
+`Execution:` **python3 AutoTrimTransparent.py /path/to/image/folder /path/to/output/folder**
+
+ Automatic Trim transparent and crop the image to the smallest boundary size.
